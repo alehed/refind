@@ -40,6 +40,7 @@
 #include "egemb_font.h"
 #include "egemb_font_large.h"
 #define FONT_NUM_CHARS 96
+#define INVERSION_THRESHOLD 70
 
 static EG_IMAGE *BaseFontImage = NULL;
 static EG_IMAGE *DarkFontImage = NULL;
@@ -98,6 +99,7 @@ VOID egRenderText(IN CHAR16 *Text, IN OUT EG_IMAGE *CompImage, IN UINTN PosX, IN
     EG_PIXEL        *BufferPtr;
     EG_PIXEL        *FontPixelData;
     UINT8           BGBrightness;
+    UINT8           BaseFontBrightness;
     UINTN           BufferLineOffset, FontLineOffset;
     UINTN           TextLength;
     UINTN           i, c;
@@ -115,22 +117,22 @@ VOID egRenderText(IN CHAR16 *Text, IN OUT EG_IMAGE *CompImage, IN UINTN PosX, IN
 
     BGBrightness = egGetAverageBrightness(CompImage);
     if (BGBrightness < 128) {
-       if (LightFontImage == NULL) {
+       if (LightFontImage == NULL)
           LightFontImage = egCopyImage(BaseFontImage);
-          if (LightFontImage == NULL)
-             return;
-          for (i = 0; i < (LightFontImage->Width * LightFontImage->Height); i++) {
-             LightFontImage->PixelData[i].r = 255 - LightFontImage->PixelData[i].r;
-             LightFontImage->PixelData[i].g = 255 - LightFontImage->PixelData[i].g;
-             LightFontImage->PixelData[i].b = 255 - LightFontImage->PixelData[i].b;
-          } // for
-       } // if
+       if (LightFontImage == NULL)
+          return;
+       BaseFontBrightness = egGetAverageBrightness(LightFontImage);
+       if ((BGBrightness < INVERSION_THRESHOLD) && (BaseFontBrightness < INVERSION_THRESHOLD))
+          egInvertImage(LightFontImage);
        FontImage = LightFontImage;
     } else {
        if (DarkFontImage == NULL)
           DarkFontImage = egCopyImage(BaseFontImage);
        if (DarkFontImage == NULL)
           return;
+       BaseFontBrightness = egGetAverageBrightness(DarkFontImage);
+       if ((BGBrightness > 255 - INVERSION_THRESHOLD) && (BaseFontBrightness > 255 - INVERSION_THRESHOLD))
+          egInvertImage(DarkFontImage);
        FontImage = DarkFontImage;
     } // if/else
 

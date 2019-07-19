@@ -122,6 +122,7 @@ VOID egFillImageArea(IN OUT EG_IMAGE *CompImage,
                      IN UINTN AreaWidth, IN UINTN AreaHeight,
                      IN EG_PIXEL *Color);
 VOID egComposeImage(IN OUT EG_IMAGE *CompImage, IN EG_IMAGE *TopImage, IN UINTN PosX, IN UINTN PosY);
+VOID egInvertImage(IN OUT EG_IMAGE *Image);
 
 UINT8 egGetAverageBrightness(IN EG_IMAGE *Image);
 UINTN egGetFontHeight(VOID);

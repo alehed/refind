@@ -685,6 +685,17 @@ VOID egComposeImage(IN OUT EG_IMAGE *CompImage, IN EG_IMAGE *TopImage, IN UINTN 
     }
 } /* VOID egComposeImage() */
 
+VOID egInvertImage(IN OUT EG_IMAGE *Image)
+{
+    UINTN i;
+    for (i = 0; i < (Image->Width * Image->Height); i++) {
+        Image->PixelData[i].r = 255 - Image->PixelData[i].r;
+        Image->PixelData[i].g = 255 - Image->PixelData[i].g;
+        Image->PixelData[i].b = 255 - Image->PixelData[i].b;
+    }
+} // VOID egInvertImage()
+
+
 //
 // misc internal functions
 //
