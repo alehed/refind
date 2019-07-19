@@ -689,6 +689,45 @@ VOID egComposeImage(IN OUT EG_IMAGE *CompImage, IN EG_IMAGE *TopImage, IN UINTN 
 // misc internal functions
 //
 
+// This tries to approximate the average luminosity as given by NTSC.
+// The more exact weights for {red, green, blue} are {0.299, 0.587, 0.114}.
+// The sum and weight counters are averaged over pixel amount to avoid overflows.
+UINT8 egGetAverageBrightness(IN EG_IMAGE *Image)
+{
+    UINTN i;
+    UINTN NPixels;
+    UINTN Weight, WeightMod, Sum, SumMod;
+    UINTN AverageLuminosity;
+
+    AverageLuminosity = 0;
+
+    if ((Image != NULL) && (Image->Width * Image->Height != 0)) {
+        NPixels = Image->Width * Image->Height;
+        Weight = 0;
+        WeightMod = 0;
+        Sum = 0;
+        SumMod = 0;
+
+        for (i = 0; i < NPixels; i++) {
+            if (Image->HasAlpha) {
+                SumMod += Image->PixelData[i].a * (3*(UINTN)Image->PixelData[i].r + 6*(UINTN)Image->PixelData[i].g + Image->PixelData[i].b);
+                WeightMod += (UINTN)Image->PixelData[i].a * 10;
+            } else {
+                SumMod += (3*(UINTN)Image->PixelData[i].r + 6*(UINTN)Image->PixelData[i].g + Image->PixelData[i].b);
+                WeightMod += 10;
+            }
+            Sum += SumMod / NPixels;
+            SumMod %= NPixels;
+            Weight += WeightMod / NPixels;
+            WeightMod %= NPixels;
+        }
+
+        AverageLuminosity = Sum / Weight;
+   } // if
+   return (UINT8) AverageLuminosity;
+}
+
+
 VOID egInsertPlane(IN UINT8 *SrcDataPtr, IN UINT8 *DestPlanePtr, IN UINTN PixelCount)
 {
     UINTN i;

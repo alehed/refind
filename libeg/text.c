@@ -92,11 +92,12 @@ VOID egMeasureText(IN CHAR16 *Text, OUT UINTN *Width, OUT UINTN *Height) {
         *Height = BaseFontImage->Height;
 }
 
-VOID egRenderText(IN CHAR16 *Text, IN OUT EG_IMAGE *CompImage, IN UINTN PosX, IN UINTN PosY, IN UINT8 BGBrightness)
+VOID egRenderText(IN CHAR16 *Text, IN OUT EG_IMAGE *CompImage, IN UINTN PosX, IN UINTN PosY)
 {
     EG_IMAGE        *FontImage;
     EG_PIXEL        *BufferPtr;
     EG_PIXEL        *FontPixelData;
+    UINT8           BGBrightness;
     UINTN           BufferLineOffset, FontLineOffset;
     UINTN           TextLength;
     UINTN           i, c;
@@ -112,6 +113,7 @@ VOID egRenderText(IN CHAR16 *Text, IN OUT EG_IMAGE *CompImage, IN UINTN PosX, IN
     if (TextLength * FontCellWidth + PosX > CompImage->Width)
         TextLength = (CompImage->Width - PosX) / FontCellWidth;
 
+    BGBrightness = egGetAverageBrightness(CompImage);
     if (BGBrightness < 128) {
        if (LightFontImage == NULL) {
           LightFontImage = egCopyImage(BaseFontImage);
