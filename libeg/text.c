@@ -157,6 +157,10 @@ VOID egRenderText(IN CHAR16 *Text, IN OUT EG_IMAGE *CompImage, IN UINTN PosX, IN
 VOID egLoadFont(IN CHAR16 *Filename) {
    if (BaseFontImage)
       egFreeImage(BaseFontImage);
+   if (DarkFontImage)
+      egFreeImage(DarkFontImage);
+   if (LightFontImage)
+      egFreeImage(LightFontImage);
 
    BaseFontImage = egLoadImage(SelfDir, Filename, TRUE);
    if (BaseFontImage == NULL)

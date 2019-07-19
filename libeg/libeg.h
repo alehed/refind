@@ -43,11 +43,6 @@
 
 /* types */
 
-typedef enum ColorTypes {
-   white,
-   black
-} Colors;
-
 /* This should be compatible with EFI_UGA_PIXEL */
 typedef struct {
     UINT8 b, g, r, a;
