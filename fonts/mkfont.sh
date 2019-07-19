@@ -24,30 +24,117 @@
 # Version history:
 #
 #  0.6.6  -  Initial release
+#  0.13.2 -  Add getopt parsing from munlik's refind-regular theme, remove
+#            y-offset option and add color option.
 
-if [[ $# != 4 ]] ; then
-   echo "Usage: $0 font-name font-size y-offset bitmap-filename.png"
-   echo "   font-name: Name of font (use 'convert -list font | less' to get list)"
-   echo "              NOTE: Font MUST be monospaced!"
-   echo "   font-size: Font size in points"
-   echo "   y-offset: pixels font is shifted (may be negative)"
-   echo "   bitmap-filename.png: output filename"
-   echo ""
-   exit 1
+CONVERT="$(command -v convert 2> /dev/null)"
+
+FONT_NAME=""
+FONT_SIZE=""
+
+function print_help() {
+    echo "Generate a PNG file suitable for use as a rEFInd font"
+    echo "Usage:"
+    echo "$0 [[-f|--font] <font_name>] [[-s|--size] <number>] <outfile.png>"
+    echo "or"
+    echo "$0 [options]... <outfile.png>"
+    echo ""
+    echo "Options:"
+    echo "-f,--font: <font_name>              Name of font"
+    echo "-s,--size: <number>                 Font size in points"
+    echo "-c,--color: <color>                 Imagemagick color, see https://imagemagick.org/script/color.php"
+    echo ""
+    echo ""
+    echo "-l,--list-font                      Display fonts list and exit"
+    echo "-h,--help                           Display this help message and exit"
+    echo ""
+    exit 1
+}
+
+if [ $# -ne 0 ]
+then
+    ARGS="$(getopt -a -o hlf:s:c: -l help,list-font,font,color:,size: -n "$0" -- "$@")"
+    eval set -- "$ARGS"
+
+    while [ $# -gt 0 ]
+    do
+        case "$1" in
+            -h|--help)
+                print_help
+                exit 1
+                ;;
+            -l|--list-font)
+                "$CONVERT" -list font
+                exit 1
+                ;;
+            -f|--font)
+                FONT_NAME="$2"
+                shift 2
+                ;;
+            -s|--size)
+                FONT_SIZE="$2"
+                shift 2
+                ;;
+            -c|--color)
+                FONT_COLOR="$2"
+                shift 2
+                ;;
+            --)
+                shift
+                break
+                ;;
+        esac
+    done
+else
+    echo "Try \`$0 --help' for more information." 1>&2
+    exit 1
 fi
 
-Convert="$(command -v convert 2> /dev/null)"
-if [[ ! -x $Convert ]] ; then
-   echo "The 'convert' program is required but could not be found. It's part of the"
-   echo "ImagMagick program, usually installed in the 'imagemagick' package."
-   echo ""
-   exit 1
+# font-name
+if ! [ "$FONT_NAME" ]
+then
+    echo "$0 --font must be specified." 1>&2
+    exit 1
 fi
 
-Height=$2
-let CellWidth=(${Height}*6+5)/10
-#let CellWidth=(${Height}*5)/10
-let Width=${CellWidth}*96
-echo "Creating ${Width}x${Height} font bitmap...."
-$Convert -size ${Width}x${Height} xc:transparent -gravity NorthWest -font $1 -pointsize $2 \
-      -draw "text 0,$3 ' !\"#\$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\`abcdefghijklmnopqrstuvwxyz{|}~?'" $4
+# font-size
+if ! [ "$FONT_SIZE" ]
+then
+    echo "$0 --size must be specified." 1>&2
+    exit 1
+elif [[ "$FONT_SIZE" =~ ^-?[0-9]+([.][0-9]+)?$ ]]
+then
+    FONT_SIZE="${${FONT_SIZE#-}%.*}" # Remove leading - and truncate
+else
+    echo "$0 --size \`$FONT_SIZE' wrong numerical." 1>&2
+    exit 1
+fi
+
+# color default=black
+if ! [ "$FONT_COLOR" ]
+then
+    FONT_COLOR='black'
+fi
+
+# output_file
+if [ $# -gt 0 ] && [ "${OUTPUT_PNG%.png}" = "$OUTPUT_PNG" ]
+then
+    OUTPUT_PNG="$1"
+    shift $#
+else
+    echo "$0 Output file must be specified and a PNG image." 1>&2
+    exit 1
+fi
+
+CEllWIDTH=$(( (FONT_SIZE * 6 + 5) / 10 ))
+WIDTH=$(( CEllWIDTH * 96 ))
+HEIGHT=$(( (150 * FONT_SIZE) / 100 ))
+
+echo "Creating ${WIDTH}x${HEIGHT} font bitmap...."
+"$CONVERT" -size "${WIDTH}x${HEIGHT}" xc:transparent \
+-gravity SouthWest \
+-font "$FONT_NAME" \
+-fill "$FONT_COLOR" \
+-pointsize "$FONT_SIZE" \
+-draw "text 0,0 ' !\"#\$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\`abcdefghijklmnopqrstuvwxyz{|}~?'" \
+"$OUTPUT_PNG"
